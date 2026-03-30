@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("scroll", updateActiveNavLink, { passive: true });
 
   /* -------------------------------------------------------
-     3. SMOOTH SCROLL for all anchor links
+     3. SMOOTH SCROLL
   ------------------------------------------------------- */
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     anchor.addEventListener("click", (e) => {
@@ -62,7 +62,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const top = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top, behavior: "smooth" });
 
-        // Close mobile menu if open
         const mobileMenu = document.getElementById("mobileMenu");
         mobileMenu.classList.remove("open");
       }
@@ -70,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* -------------------------------------------------------
-     4. MOBILE HAMBURGER MENU
+     4. MOBILE MENU
   ------------------------------------------------------- */
   const hamburgerBtn = document.getElementById("hamburgerBtn");
   const mobileMenu = document.getElementById("mobileMenu");
@@ -87,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* -------------------------------------------------------
-     7. WORK STEP HOVER (icon color change)
+     7. WORK STEP HOVER
   ------------------------------------------------------- */
   document.querySelectorAll(".work-step").forEach((step) => {
     const svgPaths = step.querySelectorAll(".step-svg path");
@@ -102,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* -------------------------------------------------------
-     8. SCROLL TO TOP BUTTON
+     8. SCROLL TO TOP
   ------------------------------------------------------- */
   const scrollTopBtn = document.getElementById("scrollTopBtn");
 
@@ -119,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* -------------------------------------------------------
-     9. FOOTER COPYRIGHT YEAR
+     9. COPYRIGHT YEAR
   ------------------------------------------------------- */
   const yearEl = document.getElementById("copyrightYear");
   if (yearEl) {
@@ -127,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* -------------------------------------------------------
-     10. CONTACT FORM VALIDATION
+     10. CONTACT FORM
   ------------------------------------------------------- */
   const form = document.getElementById("contactForm");
 
@@ -135,11 +134,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const fields = [
       { id: "formName", errorId: "nameError", label: "Name" },
       { id: "formEmail", errorId: "emailError", label: "Email" },
+      { id: "formPhone", errorId: "phoneError", label: "Phone" },
       { id: "formSubject", errorId: "subjectError", label: "Subject" },
       { id: "formMessage", errorId: "messageError", label: "Message" },
     ];
 
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const isValidPhone = (phone) => /^[6-9][0-9]{9}$/.test(phone); // ✅ ADDED
 
     const showError = (field, msg) => {
       const input = document.getElementById(field.id);
@@ -161,10 +162,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (input) {
         input.addEventListener("input", () => {
           const value = input.value.trim();
+
           if (!value) {
             showError(field, `${field.label} is required.`);
           } else if (field.id === "formEmail" && !isValidEmail(value)) {
             showError(field, "Please enter a valid email.");
+          } else if (field.id === "formPhone" && !isValidPhone(value)) {
+            showError(field, "Enter valid 10-digit phone number.");
           } else {
             clearError(field);
           }
@@ -172,34 +176,28 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    let submitted = false;
-
-    // Listen to iframe load event to know when Google has received the post
     const hiddenIframe = document.getElementById("hidden_iframe");
-    if (hiddenIframe) {
-      hiddenIframe.addEventListener("load", function() {
-        if (submitted) {
-          // Show the success message
-          const successMsg = document.getElementById("successMsg");
-          if (successMsg) {
-            successMsg.style.display = "block";
-            successMsg.textContent = "Message Sent Successfully ✅";
+    let isSubmitting = false;
 
-            // Hide after 5 seconds and change button text
-            setTimeout(() => {
-              successMsg.style.display = "none";
-              
-              // Change button text to indicate they can submit again
-              const submitText = document.getElementById("submitBtnText");
-              if (submitText) {
-                submitText.textContent = "Submit another query";
-              }
-            }, 5000);
+    if (hiddenIframe) {
+      hiddenIframe.addEventListener("load", function () {
+        if (isSubmitting) {
+          const submitText = document.getElementById("submitBtnText");
+
+          if (submitText) {
+            submitText.textContent = "Submitted ✅";
           }
-          
+
           form.reset();
           fields.forEach((f) => clearError(f));
-          submitted = false; // reset flag
+
+          setTimeout(() => {
+            if (submitText) {
+              submitText.textContent = "Submit another response";
+            }
+          }, 2000);
+
+          isSubmitting = false;
         }
       });
     }
@@ -210,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
       fields.forEach((field) => {
         const input = document.getElementById(field.id);
         if (!input) return;
+
         const value = input.value.trim();
 
         if (!value) {
@@ -218,21 +217,25 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (field.id === "formEmail" && !isValidEmail(value)) {
           showError(field, "Please enter a valid email.");
           valid = false;
+        } else if (field.id === "formPhone" && !isValidPhone(value)) {
+          showError(field, "Enter valid 10-digit phone number.");
+          valid = false;
         } else {
           clearError(field);
         }
       });
 
       if (!valid) {
-        e.preventDefault(); // Stop form submission if invalid
+        e.preventDefault();
       } else {
-        submitted = true; // Let it submit natively to the hidden iframe!
+        isSubmitting = true;
+        document.getElementById("submitBtnText").textContent = "Sending...";
       }
     });
   }
 
   /* -------------------------------------------------------
-     11. ADDRESS ITEM ICON HOVER EFFECT
+     11. ADDRESS HOVER
   ------------------------------------------------------- */
   document.querySelectorAll(".address-item").forEach((item) => {
     const iconWrap = item.querySelector(".address-icon-wrap");
@@ -247,10 +250,5 @@ document.addEventListener("DOMContentLoaded", () => {
       iconWrap.style.color = "var(--picto-primary)";
     });
   });
-
-  /* -------------------------------------------------------
-     12. MARQUEE: ensure seamless by duplicating on narrow
-  ------------------------------------------------------- */
-  // Marquee animation is handled by CSS (50% translate on duplicated content)
 
 });
